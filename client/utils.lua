@@ -11,7 +11,6 @@ local ELECTRIC_VEHICLES = {
   [GetHashKey('RAIDEN')] = true,
   [GetHashKey('SURGE')] = true,
   [GetHashKey('VOLTIC')] = true,
-  [GetHashKey('VOLTIC2')] = true,
   [GetHashKey('TEZERACT')] = true
 }
 

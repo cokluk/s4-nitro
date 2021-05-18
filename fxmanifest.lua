@@ -14,4 +14,7 @@ client_script 'client/purge.lua'
 client_script 'client/trails.lua'
 client_script 'client/main.lua'
 
+server_script '@es_extended/locale.lua'
 server_script 'server/main.lua'
+
+dependency 'es_extended'

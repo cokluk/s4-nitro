@@ -1,14 +1,34 @@
+-- CO MAVEN TARAFINDAN YENILENMIŞTIR! --
+
+
 local INPUT_CHARACTER_WHEEL = 19
 local INPUT_VEH_ACCELERATE = 71
 local INPUT_VEH_DUCK = 73
+local INPUT_LOAD_FUEL = 74
+
+ 
+
+local NITRO_FUEL = 0 --1000000
+
+local loading_nitro = false
 
 local function IsNitroControlPressed()
   if not IsInputDisabled(2) then
     DisableControlAction(2, INPUT_VEH_DUCK)
     return IsDisabledControlPressed(2, INPUT_VEH_DUCK)
   end
-
+ 
   return IsControlPressed(0, INPUT_CHARACTER_WHEEL)
+end
+
+
+local function loadfuel()
+
+  local veri = IsControlPressed(0, INPUT_LOAD_FUEL)
+
+  if loading_nitro == true then veri = false else Wait(700) end
+ 
+  return veri
 end
 
 local function IsDrivingControlPressed()
@@ -38,21 +58,34 @@ local function NitroLoop(lastVehicle)
   end
 
   local isEnabled = IsNitroControlPressed()
+  local isEnabled = IsNitroControlPressed()
   local isDriving = IsDrivingControlPressed()
   local isRunning = GetIsVehicleEngineRunning(vehicle)
   local isBoosting = IsVehicleNitroBoostEnabled(vehicle)
   local isPurging = IsVehicleNitroPurgeEnabled(vehicle)
   local isFueled = GetNitroFuelLevel(vehicle) > 0
 
+  local nitroFuel = loadfuel()
+
+  if nitroFuel then
+    TriggerServerEvent("nitro:get_nitro_item", player)
+  end
+
+  
   if isRunning and isEnabled and isFueled then
+    if NITRO_FUEL <= 0 then loading_nitro = false SetVehicleNitroBoostEnabled(vehicle, false)  SetVehicleLightTrailEnabled(vehicle, false)  SetVehicleNitroPurgeEnabled(vehicle, false) TriggerServerEvent('nitro:__sync', false, false, false)  exports['mythic_notify']:DoHudText('error', 'No nitro fuel')  Wait(1000) return end
+    NITRO_FUEL = NITRO_FUEL - 1000
+
     if isDriving then
       if not isBoosting then
         SetVehicleNitroBoostEnabled(vehicle, true)
         SetVehicleLightTrailEnabled(vehicle, true)
         SetVehicleNitroPurgeEnabled(vehicle, false)
         TriggerServerEvent('nitro:__sync', true, false, false)
+        
       end
     else
+      
       if not isPurging then
         SetVehicleNitroBoostEnabled(vehicle, false)
         SetVehicleLightTrailEnabled(vehicle, false)
@@ -78,6 +111,9 @@ Citizen.CreateThread(function ()
     lastVehicle = NitroLoop(lastVehicle)
   end
 end)
+
+
+ 
 
 RegisterNetEvent('nitro:__update')
 AddEventHandler('nitro:__update', function (playerServerId, boostEnabled, purgeEnabled, lastVehicle)
@@ -111,4 +147,48 @@ AddEventHandler('nitro:__update', function (playerServerId, boostEnabled, purgeE
   SetVehicleNitroBoostEnabled(vehicle, boostEnabled)
   SetVehicleLightTrailEnabled(vehicle, boostEnabled)
   SetVehicleNitroPurgeEnabled(vehicle, purgeEnabled)
+end)
+
+ 
+
+RegisterNetEvent('nitro:set_fuel_vehicle')
+AddEventHandler('nitro:set_fuel_vehicle', function (data)
+  nitro = data.nitro
+  if nitro == "var" then
+    if NITRO_FUEL < 1000000 then
+      TriggerServerEvent("nitro:delete_nitro_item")
+      exports['mythic_notify']:DoHudText('success', 'Carrying out refueling')
+      NITRO_FUEL = NITRO_FUEL + 1000000
+      loading_nitro = false
+
+      exports['mythic_progbar']:Progress({
+        name = "refueling",
+        duration = 5000,
+        label = 'Refueling...',
+        useWhileDead = false,
+        canCancel = false,
+        controlDisables = {
+            disableMovement = true,
+            disableCarMovement = true,
+            disableMouse = false,
+            disableCombat = true,
+        },
+ 
+    }, function(cancelled)
+        if not cancelled then
+          loading_nitro = true
+        end
+    end)
+
+    else
+      exports['mythic_notify']:DoHudText('error', 'Nitro tank at maximum level!')
+      
+    end
+
+  else
+    
+    exports['mythic_notify']:DoHudText('error', 'No nitrous item available')
+    
+  end
+ 
 end)
